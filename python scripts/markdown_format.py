@@ -10,29 +10,30 @@ import re
 
 hexa_colors_keywords_c1 = {
     r'supervised learning': '#000080',
-    r'unsupervised learning': '#7B68EE',
+    r'unsupervised learning': "#EE68A2",
+    r'regression?': "#AD98FB",
+    r'classification?': "#8800FF",
     r'inputs?': '#98FB98',
     r'outputs?': '#FF0000',
+    
 }
 
+course = ['Machine Learning Specialization']
 
-course_sections_directories = ["Supervided Learning"]
-
+# Main function, calls the functions the modify the markdown
 def main() -> None:
-    root = Path('.').resolve().parent # Project root folder
-    format_ipynb_markdown_file(root / 'Machine Learning Specialization' / 'test.ipynb')
+    root = Path('.').resolve().parent 
+    # Modify all the jupyter notebook markdown in the directory
+    format_ipynb_markdown_full_dir(root / 'Machine Learning Specialization') # Hardcoded, but easely changed with a for loop
 
-def format_ipynb_markdown_full_dir(dir: Path) -> None:
-    current = Path('.').resolve().parent # Project root folder
-    for course_section_directory in course_sections_directories:
-        if Path(current / course_section_directory).exists():
-            format_ipynb_markdown_file()
-        else:
-            print(f"Directory of name: '{course_section_directory}' doens't exist")
+# Checks if the path is a jupyter notebook
+def format_ipynb_markdown_full_dir(course_path: Path) -> None:
+    for course_section_path in course_path.iterdir():
+        if course_section_path.is_file() and course_section_path.suffix == '.ipynb':
+            detec_markdown_cells(course_path / course_section_path)
 
-
-# FINISH THIS FUNCTION TO CHANGE CERTAIN KEYWORDS TO A CERTAIN COLOR AND BOLDNESS
-def format_ipynb_markdown_file(file_path: Path) -> None:
+# Checks for Markdowns cells and then calls the function that changes those cells
+def detec_markdown_cells(file_path: Path) -> None:
     old_notebook = nbformat.read(file_path , as_version=4)
     new_notebook = nbformat.read(file_path , as_version=4)
     for old_cell, new_cell in zip(old_notebook.cells, new_notebook.cells):
@@ -51,17 +52,15 @@ def format_ipynb_markdown_cell(old_cell_source):
             rf'|\b[^\s\w]?{keyword}\b[^\s\w]?\b',
             flags=re.IGNORECASE
         )
-
         def replacer(match) -> str:
             matched_text = match.group(0)
             # If it is already inside a span, replace the color
             if matched_text.startswith('<span'):
                 # Replace color inside span tag with the new color
-                return re.sub(r'color:[a-zA-Z0-9#]*', f'color:{color}', matched_text)
+                return re.sub(r'color:[#a-zA-Z0-9]*?">\*{0,2}', f'color:{color}">**', re.sub(r'\*{0,2}\s*</span>', '**</span>',matched_text))
             else:
                 # Wrap plain word in new span with color
-                return f'<span style="color:{color}">{matched_text}</span>'
-
+                return f'<span style="color:{color}">**{matched_text}**</span>'
         text = re.sub(pattern, replacer, text)
     return text
 
